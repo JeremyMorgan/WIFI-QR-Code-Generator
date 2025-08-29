@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+
+# Virtual environments
+venv/
+ENV/
+env/
+
+# VS Code
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test and coverage
+*.cover
+.coverage
+htmlcov/
+*.log
+
+# Misc
+*.sqlite3
+*.db
+
+# Ignore QR code images if generated
+*.png
+
+# Ignore environment files
+.env
