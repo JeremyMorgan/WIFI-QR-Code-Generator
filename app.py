@@ -1,12 +1,12 @@
 from flask import Flask, render_template, request
-import qrcode
 import io, base64
+import qrcode
 
 app = Flask(__name__)
 
 def escape_wifi_text(s: str) -> str:
     """
-    Escape special chars per Wi‑Fi QR standard: \,;,: and quotes.
+    Escape special chars per Wi‑Fi QR standard: \\,;,: and quotes.
     """
     if s is None:
         return ""
@@ -62,4 +62,5 @@ def index():
 
 if __name__ == "__main__":
     # For local dev only
-    app.run(debug=True, host="0.0.0.0", port=5000)
+    app.run(debug=True, host="0.0.0.0", port=5001)
+    

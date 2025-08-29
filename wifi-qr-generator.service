@@ -1,0 +1,17 @@
+[Unit]
+Description=WiFi QR Code Generator Flask App
+After=network.target
+
+[Service]
+Type=exec
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/opt/wifi-qr-generator
+Environment=PATH=/opt/wifi-qr-generator/venv/bin
+ExecStart=/opt/wifi-qr-generator/venv/bin/gunicorn --workers 3 --bind 127.0.0.1:5001 wsgi:app
+ExecReload=/bin/kill -s HUP $MAINPID
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
