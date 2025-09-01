@@ -61,6 +61,7 @@ def index():
     return render_template("index.html", qr_b64=qr_b64, payload=payload, ssid=ssid, password=password, auth=auth, hidden=hidden)
 
 if __name__ == "__main__":
-    # For local dev only
-    app.run(debug=True, host="0.0.0.0", port=5001)
+    import os
+    debug_mode = os.getenv('FLASK_ENV') == 'development'
+    app.run(debug=debug_mode, host="0.0.0.0", port=5001)
     

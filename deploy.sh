@@ -1,60 +1,83 @@
 #!/bin/bash
 
-# WiFi QR Generator Deployment Script
+# WiFi QR Generator Deployment Script for Ubuntu EC2
 # Run this script on your EC2 instance to set up the application
 
 set -e
 
-APP_DIR="/opt/wifi-qr-generator"
-APP_USER="ubuntu"
-REPO_URL="https://github.com/JeremyMorgan/WIFI-QR-Code-Generator.git"
-
-echo "Starting deployment..."
+echo "Starting deployment of WiFi QR Generator..."
 
 # Update system packages
-sudo apt update && sudo apt upgrade -y
+sudo apt update
+sudo apt upgrade -y
 
 # Install required packages
 sudo apt install -y python3 python3-pip python3-venv nginx git
 
 # Create application directory
-sudo mkdir -p $APP_DIR
-sudo chown $APP_USER:$APP_USER $APP_DIR
+sudo mkdir -p /opt/wifi-qr-generator
+sudo chown $USER:$USER /opt/wifi-qr-generator
 
 # Clone or update repository
-if [ -d "$APP_DIR/.git" ]; then
+if [ -d "/opt/wifi-qr-generator/.git" ]; then
     echo "Repository exists, pulling latest changes..."
-    cd $APP_DIR
+    cd /opt/wifi-qr-generator
     git pull origin main
 else
     echo "Cloning repository..."
-    git clone $REPO_URL $APP_DIR
-    cd $APP_DIR
+    git clone https://github.com/YOUR_USERNAME/WIFI-QR-Code-Generator.git /opt/wifi-qr-generator
+    cd /opt/wifi-qr-generator
 fi
 
-# Create virtual environment if it doesn't exist
-if [ ! -d "$APP_DIR/venv" ]; then
-    echo "Creating virtual environment..."
-    python3 -m venv venv
-fi
-
-# Activate virtual environment and install dependencies
+# Create virtual environment
+python3 -m venv venv
 source venv/bin/activate
+
+# Install Python dependencies
 pip install --upgrade pip
 pip install -r requirements.txt
-pip install gunicorn
 
-# Create production WSGI file
-cat > wsgi.py << EOF
-from app import app
+# Copy nginx configuration
+sudo cp nginx.conf /etc/nginx/sites-available/wifi-qr-generator
+sudo ln -sf /etc/nginx/sites-available/wifi-qr-generator /etc/nginx/sites-enabled/
+sudo rm -f /etc/nginx/sites-enabled/default
 
-if __name__ == "__main__":
-    app.run()
+# Test nginx configuration
+sudo nginx -t
+
+# Create systemd service file
+sudo tee /etc/systemd/system/wifi-qr-generator.service > /dev/null << EOF
+[Unit]
+Description=WiFi QR Code Generator Flask App
+After=network.target
+
+[Service]
+Type=simple
+User=$USER
+WorkingDirectory=/opt/wifi-qr-generator
+Environment=PATH=/opt/wifi-qr-generator/venv/bin
+ExecStart=/opt/wifi-qr-generator/venv/bin/python app.py
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
 EOF
 
+# Reload systemd and start services
+sudo systemctl daemon-reload
+sudo systemctl enable wifi-qr-generator
+sudo systemctl start wifi-qr-generator
+sudo systemctl enable nginx
+sudo systemctl start nginx
+
+# Check service status
+echo "Checking service status..."
+sudo systemctl status wifi-qr-generator --no-pager
+sudo systemctl status nginx --no-pager
+
 echo "Deployment completed successfully!"
-echo "Next steps:"
-echo "1. Update REPO_URL in this script with your actual GitHub repository URL"
-echo "2. Set up the systemd service: sudo cp wifi-qr-generator.service /etc/systemd/system/"
-echo "3. Set up nginx: sudo cp nginx.conf /etc/nginx/sites-available/wifi-qr-generator"
-echo "4. Enable and start services"
+echo "Your application should be accessible at http://YOUR_EC2_PUBLIC_IP"
+echo ""
+echo "To check logs, run:"
+echo "sudo journalctl -u wifi-qr-generator -f"
